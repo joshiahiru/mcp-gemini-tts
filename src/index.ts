@@ -10,8 +10,22 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 
-const DEFAULT_VOICE = "Kore";
-const DEFAULT_MODEL = "gemini-2.5-flash-preview-tts";
+const BUILTIN_DEFAULT_VOICE = "Kore";
+const BUILTIN_DEFAULT_MODEL = "gemini-2.5-flash-preview-tts";
+
+// Default voice when a call omits the `voice` argument. Configurable via the
+// GEMINI_TTS_VOICE environment variable; falls back to the built-in default.
+function defaultVoice(): string {
+  const fromEnv = process.env.GEMINI_TTS_VOICE;
+  return fromEnv && fromEnv.trim() !== "" ? fromEnv.trim() : BUILTIN_DEFAULT_VOICE;
+}
+
+// Default model when a call omits the `model` argument. Configurable via the
+// GEMINI_TTS_MODEL environment variable; falls back to the built-in default.
+function defaultModel(): string {
+  const fromEnv = process.env.GEMINI_TTS_MODEL;
+  return fromEnv && fromEnv.trim() !== "" ? fromEnv.trim() : BUILTIN_DEFAULT_MODEL;
+}
 
 // Directory used when output_path is omitted or relative. Configurable via the
 // GEMINI_TTS_OUTPUT_DIR environment variable; falls back to the user's home dir.
@@ -112,11 +126,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             voice: {
               type: "string",
-              description: `Voice name to use. Defaults to "${DEFAULT_VOICE}". Available Gemini TTS voices include: Kore, Puck, Charon, Fenrir, Aoede, Leda, Orus, Zephyr.`,
+              description: `Voice name to use. Defaults to the GEMINI_TTS_VOICE env var, or "${BUILTIN_DEFAULT_VOICE}" if unset. Available Gemini TTS voices include: Kore, Puck, Charon, Fenrir, Aoede, Leda, Orus, Zephyr.`,
             },
             model: {
               type: "string",
-              description: `Gemini model to use. Defaults to "${DEFAULT_MODEL}".`,
+              description: `Gemini model to use. Defaults to the GEMINI_TTS_MODEL env var, or "${BUILTIN_DEFAULT_MODEL}" if unset.`,
             },
           },
           required: ["text"],
@@ -136,8 +150,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   const args = request.params.arguments as Record<string, unknown>;
   const text = args.text as string | undefined;
-  const voice = (args.voice as string | undefined) ?? DEFAULT_VOICE;
-  const model = (args.model as string | undefined) ?? DEFAULT_MODEL;
+  const voice = (args.voice as string | undefined) ?? defaultVoice();
+  const model = (args.model as string | undefined) ?? defaultModel();
 
   // Validate required inputs
   if (!text || typeof text !== "string" || text.trim() === "") {
