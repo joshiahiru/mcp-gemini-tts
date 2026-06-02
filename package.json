@@ -1,0 +1,23 @@
+{
+  "name": "mcp-gemini-tts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MCP server exposing Google Gemini text-to-speech",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-gemini-tts": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  }
+}
