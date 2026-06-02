@@ -27,7 +27,8 @@ Add the following to `~/.claude/claude_code_config.json` under the `mcpServers` 
       "command": "node",
       "args": ["/Users/olaf.van.der.hoorn/Documents/Claude/mcp-gemini-tts/dist/index.js"],
       "env": {
-        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE"
+        "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE",
+        "GEMINI_TTS_OUTPUT_DIR": "/Users/you/Documents/tts"
       }
     }
   }
@@ -36,12 +37,19 @@ Add the following to `~/.claude/claude_code_config.json` under the `mcpServers` 
 
 Restart Claude Code after saving the config.
 
+## Environment variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `GEMINI_API_KEY` | yes | — | Gemini API key |
+| `GEMINI_TTS_OUTPUT_DIR` | no | user's home directory | Default directory for output files. Used when `output_path` is omitted or relative. Supports `~`. |
+
 ## Tool: `synthesize_speech`
 
 | Parameter | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `text` | string | yes | — | Text to convert to speech |
-| `output_path` | string | yes | — | Absolute path for the output WAV file |
+| `output_path` | string | no | timestamped file in the default dir | Absolute path, or a relative path/bare filename resolved against the default output directory (`GEMINI_TTS_OUTPUT_DIR`, or home). If omitted, a `gemini-tts-<timestamp>.wav` file is created there. |
 | `voice` | string | no | `Kore` | Gemini TTS voice name |
 | `model` | string | no | `gemini-2.5-flash-preview-tts` | Gemini model |
 

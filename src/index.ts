@@ -8,9 +8,40 @@ import {
 import { GoogleGenAI } from "@google/genai";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 
 const DEFAULT_VOICE = "Kore";
 const DEFAULT_MODEL = "gemini-2.5-flash-preview-tts";
+
+// Directory used when output_path is omitted or relative. Configurable via the
+// GEMINI_TTS_OUTPUT_DIR environment variable; falls back to the user's home dir.
+function defaultOutputDir(): string {
+  const fromEnv = process.env.GEMINI_TTS_OUTPUT_DIR;
+  if (fromEnv && fromEnv.trim() !== "") {
+    return fromEnv.startsWith("~")
+      ? path.join(os.homedir(), fromEnv.slice(1))
+      : fromEnv;
+  }
+  return os.homedir();
+}
+
+// Resolve a user-supplied output path against the default dir. Accepts an
+// absolute path (used as-is), a relative path/bare filename (resolved against
+// the default dir), or undefined (auto-generates a timestamped filename).
+function resolveOutputPath(outputPath: string | undefined): string {
+  const dir = defaultOutputDir();
+  if (!outputPath || outputPath.trim() === "") {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return path.join(dir, `gemini-tts-${stamp}.wav`);
+  }
+  if (outputPath.startsWith("~")) {
+    return path.join(os.homedir(), outputPath.slice(1));
+  }
+  if (path.isAbsolute(outputPath)) {
+    return outputPath;
+  }
+  return path.join(dir, outputPath);
+}
 
 // Gemini TTS treats a bare prompt as something to respond to (often failing with
 // "Model tried to generate text, but it should only be used for TTS"). Prefixing
@@ -77,7 +108,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             output_path: {
               type: "string",
               description:
-                "Absolute path where the audio file will be saved (e.g. /tmp/output.wav).",
+                "Where to save the audio file. May be an absolute path, or a relative path/bare filename which is resolved against the default output directory (GEMINI_TTS_OUTPUT_DIR, or the user's home directory). If omitted, a timestamped filename is generated in that directory.",
             },
             voice: {
               type: "string",
@@ -88,7 +119,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: `Gemini model to use. Defaults to "${DEFAULT_MODEL}".`,
             },
           },
-          required: ["text", "output_path"],
+          required: ["text"],
         },
       },
     ],
@@ -105,7 +136,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   const args = request.params.arguments as Record<string, unknown>;
   const text = args.text as string | undefined;
-  const outputPath = args.output_path as string | undefined;
   const voice = (args.voice as string | undefined) ?? DEFAULT_VOICE;
   const model = (args.model as string | undefined) ?? DEFAULT_MODEL;
 
@@ -117,19 +147,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     };
   }
 
-  if (!outputPath || typeof outputPath !== "string") {
-    return {
-      content: [{ type: "text", text: "Error: 'output_path' is required and must be an absolute path string." }],
-      isError: true,
-    };
-  }
-
-  if (!path.isAbsolute(outputPath)) {
-    return {
-      content: [{ type: "text", text: `Error: 'output_path' must be an absolute path. Got: ${outputPath}` }],
-      isError: true,
-    };
-  }
+  // Resolve output path: absolute as-is, relative/bare against the default dir
+  // (GEMINI_TTS_OUTPUT_DIR or home), or auto-generated when omitted.
+  const outputPath = resolveOutputPath(args.output_path as string | undefined);
 
   // Check API key
   const apiKey = process.env.GEMINI_API_KEY;
