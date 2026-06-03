@@ -7,7 +7,7 @@ A Model Context Protocol (MCP) server that exposes Google Gemini text-to-speech 
 ### 1. Install dependencies and build
 
 ```bash
-cd /Users/olaf.van.der.hoorn/Documents/Claude/mcp-gemini-tts
+cd mcp-gemini-tts
 npm install
 npm run build
 ```
@@ -25,7 +25,7 @@ Add the following to `~/.claude/claude_code_config.json` under the `mcpServers` 
   "mcpServers": {
     "gemini-tts": {
       "command": "node",
-      "args": ["/Users/olaf.van.der.hoorn/Documents/Claude/mcp-gemini-tts/dist/index.js"],
+      "args": ["<your path>/mcp-gemini-tts/dist/index.js"],
       "env": {
         "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE",
         "GEMINI_TTS_OUTPUT_DIR": "/Users/you/Documents/tts",
